@@ -36,6 +36,21 @@ impl<T> LinkedList<T> {
     }
 }
 
+impl<T> Drop for LinkedList<T> {
+    fn drop(&mut self) {
+        let mut head = self.head.take();
+        while let Some(link) = head {
+            if let Ok(node) = Rc::try_unwrap(link) {
+                // If this list is the only reference to the node, take ownership of
+                // it and subsequently drop it
+                head = node.next;
+            } else {
+                break;
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
