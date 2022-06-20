@@ -35,6 +35,10 @@ impl<T> LinkedList<T> {
     pub fn pop(&mut self) -> Option<T> {
         self.pop_link().map(|node| node.item)
     }
+
+    pub fn peek(&self) -> Option<&T> {
+        self.head.as_ref().map(|node| &node.item)
+    }
 }
 
 // https://rust-unofficial.github.io/too-many-lists/first-drop.html
@@ -49,7 +53,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test() {
+    fn test_push_pop() {
         let mut list = LinkedList::<i32>::new();
 
         assert_eq!(list.pop(), None);
@@ -69,5 +73,17 @@ mod tests {
 
         assert_eq!(list.pop(), Some(1));
         assert_eq!(list.pop(), None);
+    }
+
+    #[test]
+    fn test_peek() {
+        let mut list = LinkedList::<i32>::new();
+
+        assert_eq!(list.peek(), None);
+
+        list.push(1);
+
+        assert_eq!(list.peek(), Some(&1));
+        assert_eq!(list.peek(), Some(&1));
     }
 }
