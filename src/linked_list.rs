@@ -1,4 +1,5 @@
 pub mod into_iter;
+pub mod iter;
 
 type Link<T> = Option<Box<Node<T>>>;
 
