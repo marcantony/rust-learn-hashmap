@@ -1,5 +1,7 @@
 use std::rc::Rc;
 
+pub mod iter;
+
 type Link<T> = Option<Rc<Node<T>>>;
 
 struct Node<T> {
