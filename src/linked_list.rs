@@ -25,11 +25,22 @@ impl<T> LinkedList<T> {
         self.head = Some(new_node);
     }
 
-    pub fn pop(&mut self) -> Option<T> {
-        self.head.take().map(|node| {
-            self.head = node.next;
-            node.item
+    fn pop_link(&mut self) -> Link<T> {
+        self.head.take().map(|mut boxed_node| {
+            self.head = boxed_node.next.take();
+            boxed_node
         })
+    }
+
+    pub fn pop(&mut self) -> Option<T> {
+        self.pop_link().map(|node| node.item)
+    }
+}
+
+// https://rust-unofficial.github.io/too-many-lists/first-drop.html
+impl<T> Drop for LinkedList<T> {
+    fn drop(&mut self) {
+        while let Some(_) = self.pop_link() {}
     }
 }
 
