@@ -1,5 +1,5 @@
-mod linked_list;
-mod persistent_list;
+pub mod linked_list;
+pub mod persistent_list;
 
 #[cfg(test)]
 mod tests {
