@@ -39,6 +39,10 @@ impl<T> LinkedList<T> {
     pub fn peek(&self) -> Option<&T> {
         self.head.as_ref().map(|node| &node.item)
     }
+
+    pub fn peek_mut(&mut self) -> Option<&mut T> {
+        self.head.as_mut().map(|node| &mut node.item)
+    }
 }
 
 // https://rust-unofficial.github.io/too-many-lists/first-drop.html
@@ -80,10 +84,27 @@ mod tests {
         let mut list = LinkedList::<i32>::new();
 
         assert_eq!(list.peek(), None);
+        assert_eq!(list.peek_mut(), None);
 
         list.push(1);
 
         assert_eq!(list.peek(), Some(&1));
         assert_eq!(list.peek(), Some(&1));
+        assert_eq!(list.peek_mut(), Some(&mut 1));
+        assert_eq!(list.peek_mut(), Some(&mut 1));
+    }
+
+    #[test]
+    fn test_peek_mutability() {
+        let mut list = LinkedList::<i32>::new();
+
+        list.push(1);
+
+        list.peek_mut()
+            .map(|value| *value = 2);
+        assert_eq!(list.peek_mut(), Some(&mut 2));
+
+        list.pop();
+        assert_eq!(list.peek_mut(), None);
     }
 }
