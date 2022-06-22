@@ -9,17 +9,20 @@ struct Node<T> {
     next: Link<T>
 }
 
+/// A mutable, stack-like linked list.
 pub struct LinkedList<T> {
     head: Link<T>
 }
 
 impl<T> LinkedList<T> {
+    /// Creates an empty list.
     pub fn new() -> Self {
         LinkedList {
             head: None
         }
     }
 
+    /// Pushes an item to the head of the list.
     pub fn push(&mut self, item: T) {
         let new_node = Box::new(Node {
             item: item,
@@ -36,14 +39,17 @@ impl<T> LinkedList<T> {
         })
     }
 
+    /// Removes the list's head and returns it, if it exists.
     pub fn pop(&mut self) -> Option<T> {
         self.pop_link().map(|node| node.item)
     }
 
+    /// Returns a shared reference to the list's head, if it exists.
     pub fn peek(&self) -> Option<&T> {
         self.head.as_ref().map(|node| &node.item)
     }
 
+    /// Returns a mutable reference to the lists's head, if it exists.
     pub fn peek_mut(&mut self) -> Option<&mut T> {
         self.head.as_mut().map(|node| &mut node.item)
     }

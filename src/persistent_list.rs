@@ -9,15 +9,19 @@ struct Node<T> {
     next: Link<T>
 }
 
+/// An immutable, persistent stack-like linked list. Multiple lists can refer to the same data in memory,
+/// allowing for efficient reuse.
 pub struct LinkedList<T> {
     head: Link<T>
 }
 
 impl<T> LinkedList<T> {
+    /// Creates an empty immutable list.
     pub fn new() -> Self {
         LinkedList { head: None }
     }
 
+    /// Creates a new list from the current one with the item prepended to the beginning.
     pub fn prepend(&self, item: T) -> Self {
         let new_node = Rc::new(Node {
             item: item,
@@ -27,10 +31,12 @@ impl<T> LinkedList<T> {
         LinkedList { head: Some(new_node) }
     }
 
+    /// Creates a new list which excludes the head of the current one.
     pub fn tail(&self) -> Self {
         LinkedList { head: self.head.as_ref().and_then(|node| node.next.clone()) }
     }
 
+    /// Returns a reference to the list's head, if it exists.
     pub fn head(&self) -> Option<&T> {
         self.head.as_ref().map(|node| &node.item)
     }
