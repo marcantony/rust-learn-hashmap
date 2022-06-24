@@ -1,7 +1,7 @@
-use std::{hash::{Hash, Hasher}, collections::{LinkedList, hash_map::DefaultHasher}};
+use std::{hash::{Hash, Hasher}, collections::hash_map::DefaultHasher};
 
 pub struct HashMap<K, V> {
-    items: Vec<LinkedList<Entry<K, V>>>
+    items: Vec<Vec<Entry<K, V>>>
 }
 
 struct Entry<K, V> {
@@ -20,7 +20,7 @@ fn hash(value: &impl Hash) -> u64 {
 impl<K: Hash + Eq, V> HashMap<K, V> {
     pub fn new() -> Self {
         let mut vec = Vec::with_capacity(DEFAULT_SIZE);
-        vec.resize_with(DEFAULT_SIZE, LinkedList::new);
+        vec.resize_with(DEFAULT_SIZE, Vec::new);
         HashMap { items: vec }
     }
 
@@ -44,13 +44,18 @@ impl<K: Hash + Eq, V> HashMap<K, V> {
             Some(entry) => entry.value = value,
             None => {
                 let new_entry = Entry { key: key, value: value };
-                containing_list.push_back(new_entry)
+                containing_list.push(new_entry)
             }
         };
     }
 
     pub fn pop(&mut self, key: &K) -> Option<V> {
-        todo!()
+        let index = self.find_key_index(&key);
+        let containing_list = &mut self.items[index];
+
+        containing_list.iter()
+            .position(|entry| &entry.key == key)
+            .map(|position| containing_list.swap_remove(position).value)
     }
 
     fn find_key_index(&self, key: &K) -> usize {
