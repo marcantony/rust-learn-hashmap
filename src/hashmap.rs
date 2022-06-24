@@ -1,4 +1,4 @@
-use std::{hash::{Hash, Hasher}, collections::hash_map::DefaultHasher};
+use std::{hash::{Hash, Hasher}, collections::hash_map::DefaultHasher, mem};
 
 pub struct HashMap<K, V> {
     items: Vec<Vec<Entry<K, V>>>
@@ -33,7 +33,7 @@ impl<K: Hash + Eq, V> HashMap<K, V> {
             .map(|entry| &entry.value)
     }
 
-    pub fn put(&mut self, key: K, value: V) {
+    pub fn put(&mut self, key: K, value: V) -> Option<V> {
         let index = self.find_key_index(&key);
         let containing_list = &mut self.items[index];
 
@@ -41,12 +41,13 @@ impl<K: Hash + Eq, V> HashMap<K, V> {
             .find(|entry| entry.key == key);
 
         match existing_entry {
-            Some(entry) => entry.value = value,
+            Some(entry) => Some(mem::replace(&mut entry.value, value)),
             None => {
                 let new_entry = Entry { key: key, value: value };
-                containing_list.push(new_entry)
+                containing_list.push(new_entry);
+                None
             }
-        };
+        }
     }
 
     pub fn pop(&mut self, key: &K) -> Option<V> {
@@ -101,7 +102,7 @@ mod tests {
         let mut map = HashMap::new();
 
         map.put("foo", "1");
-        map.put("foo", "2");
+        assert_eq!(map.put("foo", "2"), Some("1"));
         assert_eq!(map.get(&"foo"), Some(&"2"));
     }
 }
