@@ -1,25 +1,63 @@
-use std::{hash::Hash, marker::PhantomData};
+use std::{hash::{Hash, Hasher}, collections::{LinkedList, hash_map::DefaultHasher}};
 
 pub struct HashMap<K, V> {
-    key: PhantomData<K>,
-    value: PhantomData<V>
+    items: Vec<LinkedList<Entry<K, V>>>
 }
 
-impl<K: Hash, V> HashMap<K, V> {
+struct Entry<K, V> {
+    key: K,
+    value: V
+}
+
+const DEFAULT_SIZE: usize = 16;
+
+fn hash(value: &impl Hash) -> u64 {
+    let mut hasher = DefaultHasher::new();
+    value.hash(&mut hasher);
+    hasher.finish()
+}
+
+impl<K: Hash + Eq, V> HashMap<K, V> {
     pub fn new() -> Self {
-        todo!()
+        let mut vec = Vec::with_capacity(DEFAULT_SIZE);
+        vec.resize_with(DEFAULT_SIZE, LinkedList::new);
+        HashMap { items: vec }
     }
 
     pub fn get(&self, key: &K) -> Option<&V> {
-        todo!()
+        let index = self.find_key_index(&key);
+        let containing_list = &self.items[index];
+
+        containing_list.iter()
+            .find(|entry| &entry.key == key)
+            .map(|entry| &entry.value)
     }
 
     pub fn put(&mut self, key: K, value: V) {
-        todo!()
+        let index = self.find_key_index(&key);
+        let containing_list = &mut self.items[index];
+
+        let existing_entry = containing_list.iter_mut()
+            .find(|entry| entry.key == key);
+
+        match existing_entry {
+            Some(entry) => entry.value = value,
+            None => {
+                let new_entry = Entry { key: key, value: value };
+                containing_list.push_back(new_entry)
+            }
+        };
     }
 
     pub fn pop(&mut self, key: &K) -> Option<V> {
         todo!()
+    }
+
+    fn find_key_index(&self, key: &K) -> usize {
+        let h = hash(&key);
+        let current_size = self.items.len();
+        // "as" here is fine since we're truncating the hash with the modulo anyway
+        h as usize % current_size
     }
 }
 
