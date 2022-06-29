@@ -1,12 +1,14 @@
 use std::{hash::{Hash, Hasher}, collections::hash_map::DefaultHasher, mem};
 
+pub mod iter;
+
 pub struct HashMap<K, V> {
     items: Vec<Vec<Entry<K, V>>>
 }
 
-struct Entry<K, V> {
-    key: K,
-    value: V
+pub struct Entry<K, V> {
+    pub key: K,
+    pub value: V
 }
 
 const DEFAULT_SIZE: usize = 16;
