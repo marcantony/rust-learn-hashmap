@@ -105,4 +105,34 @@ mod tests {
         assert_eq!(map.put("foo", "2"), Some("1"));
         assert_eq!(map.get(&"foo"), Some(&"2"));
     }
+
+    #[derive(PartialEq, Eq)]
+    struct MyKey {
+        foo: i32
+    }
+
+    impl MyKey {
+        pub fn new(val: i32) -> Self { MyKey { foo: val } }
+    }
+
+    impl Hash for MyKey {
+        fn hash<H: Hasher>(&self, state: &mut H) {
+            state.write_i32(1); // Always give same hash
+        }
+    }
+
+    #[test]
+    fn test_keys_colliding_hash () {
+        let mut map = HashMap::new();
+
+        // Sanity check that hashes are the same
+        assert_eq!(hash(&MyKey::new(1)), hash(&MyKey::new(2)));
+
+        // Insert two different K->V pairs with same hash
+        assert_eq!(map.put(MyKey::new(1), "1"), None);
+        assert_eq!(map.put(MyKey::new(2), "2"), None);
+
+        assert_eq!(map.get(&MyKey::new(1)), Some(&"1"));
+        assert_eq!(map.get(&MyKey::new(2)), Some(&"2"));
+    }
 }
