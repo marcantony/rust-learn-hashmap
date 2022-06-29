@@ -1,6 +1,7 @@
 use std::{hash::{Hash, Hasher}, collections::hash_map::DefaultHasher, mem};
 
 pub mod iter;
+pub mod iter_mut;
 
 pub struct HashMap<K, V> {
     items: Vec<Vec<Entry<K, V>>>
