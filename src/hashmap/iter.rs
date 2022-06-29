@@ -1,19 +1,20 @@
 use super::{HashMap, Entry};
 
 pub struct Iter<'a, 'b, K: 'a, V: 'a> {
-    iterator: Box<dyn Iterator<Item = &'a Entry<K, V>> + 'b>
+    iterator: Box<dyn Iterator<Item = Entry<&'a K, &'a V>> + 'b>
 }
 
-impl<'a, K, V> HashMap<K, V> {
-    pub fn iter(&'a self) -> Iter<K, V> {
+impl<K, V> HashMap<K, V> {
+    pub fn iter(& self) -> Iter<K, V> {
         Iter {
-            iterator: Box::new(self.items.iter().flatten())
+            iterator: Box::new(self.items.iter().flatten()
+                .map(|entry| Entry { key: &entry.key, value: &entry.value }))
         }
     }
 }
 
 impl<'a, 'b, K: 'a, V: 'a> Iterator for Iter<'a, 'b, K, V> {
-    type Item = &'a Entry<K, V>;
+    type Item = Entry<&'a K, &'a V>;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.iterator.next()
@@ -39,15 +40,17 @@ mod tests {
         }
 
         // Use iterator to pull out all items
-        let mut map_items: Vec<(i32, i32)> = map.iter()
+        let mut map_items: Vec<(&i32, &i32)> = map.iter()
             .map(|entry| (entry.key, entry.value))
             .collect();
-        let mut generated_entries = make_entries();
+        let entries = make_entries();
+        let mut processed_entries: Vec<(&i32, &i32)> = entries.iter()
+            .map(|entry| (&entry.0, &entry.1)).collect();
 
         // Map is unordered, so make sure these are in the same order
         map_items.sort_by_key(|entry| entry.0);
-        generated_entries.sort_by_key(|entry| entry.0);
+        processed_entries.sort_by_key(|entry| entry.0);
 
-        assert_eq!(map_items, generated_entries);
+        assert_eq!(map_items, processed_entries);
     }
 }
