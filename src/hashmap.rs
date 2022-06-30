@@ -21,15 +21,30 @@ fn hash(value: &impl Hash) -> u64 {
     hasher.finish()
 }
 
+fn find_key_index(key: &impl Hash, capacity: usize) -> usize {
+    let h = hash(&key);
+    // "as" here is fine since we're truncating the hash with the modulo anyway
+    h as usize % capacity
+}
+
 impl<K: Hash + Eq, V> HashMap<K, V> {
+    fn create_backing_vec(size: usize) -> Vec<Vec<Entry<K, V>>> {
+        let mut vec = Vec::with_capacity(size);
+        vec.resize_with(size, Vec::new);
+        vec
+    }
+
     pub fn new() -> Self {
-        let mut vec = Vec::with_capacity(DEFAULT_SIZE);
-        vec.resize_with(DEFAULT_SIZE, Vec::new);
+        HashMap::with_size(DEFAULT_SIZE)
+    }
+
+    pub fn with_size(size: usize) -> Self {
+        let vec = HashMap::create_backing_vec(size);
         HashMap { items: vec }
     }
 
     pub fn get(&self, key: &K) -> Option<&V> {
-        let index = self.find_key_index(&key);
+        let index = find_key_index(&key, self.items.len());
         let containing_list = &self.items[index];
 
         containing_list.iter()
@@ -38,7 +53,7 @@ impl<K: Hash + Eq, V> HashMap<K, V> {
     }
 
     pub fn put(&mut self, key: K, value: V) -> Option<V> {
-        let index = self.find_key_index(&key);
+        let index = find_key_index(&key, self.items.len());
         let containing_list = &mut self.items[index];
 
         let existing_entry = containing_list.iter_mut()
@@ -55,7 +70,7 @@ impl<K: Hash + Eq, V> HashMap<K, V> {
     }
 
     pub fn pop(&mut self, key: &K) -> Option<V> {
-        let index = self.find_key_index(&key);
+        let index = find_key_index(&key, self.items.len());
         let containing_list = &mut self.items[index];
 
         containing_list.iter()
@@ -63,11 +78,14 @@ impl<K: Hash + Eq, V> HashMap<K, V> {
             .map(|position| containing_list.swap_remove(position).value)
     }
 
-    fn find_key_index(&self, key: &K) -> usize {
-        let h = hash(&key);
-        let current_size = self.items.len();
-        // "as" here is fine since we're truncating the hash with the modulo anyway
-        h as usize % current_size
+
+    pub fn resize(&mut self, size: usize) {
+        let mut new_vec: Vec<Vec<Entry<K, V>>> = HashMap::create_backing_vec(size);
+        for entry in mem::take(&mut self.items).into_iter().flatten() {
+            let index = find_key_index(&entry.key, new_vec.len());
+            new_vec[index].push(entry)
+        }
+        self.items = new_vec;
     }
 }
 
@@ -138,5 +156,29 @@ mod tests {
 
         assert_eq!(map.get(&MyKey::new(1)), Some(&"1"));
         assert_eq!(map.get(&MyKey::new(2)), Some(&"2"));
+    }
+
+    #[test]
+    fn test_resize() {
+        let mut map = HashMap::with_size(DEFAULT_SIZE);
+
+        let entries: Vec<(String, i32)> = (1..100).map(|i| i.to_string()).zip(1..100).collect();
+
+        // Fill map
+        for entry in entries.iter() {
+            map.put(&entry.0[..], entry.1);
+        }
+
+        // Resizing map larger doesn't mess up keys
+        map.resize(100);
+        for entry in entries.iter() {
+            assert_eq!(map.get(&&entry.0[..]), Some(&entry.1))
+        }
+
+        // Shrinking map doesn't mess up keys
+        map.resize(2);
+        for entry in entries.iter() {
+            assert_eq!(map.get(&&entry.0[..]), Some(&entry.1))
+        }
     }
 }
