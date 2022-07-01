@@ -15,6 +15,7 @@ pub struct Entry<K, V> {
 }
 
 const DEFAULT_CAPACITY: usize = 16;
+const DEFAULT_LOAD_FACTOR: f64 = 0.75;
 
 fn hash(value: &impl Hash) -> u64 {
     let mut hasher = DefaultHasher::new();
@@ -45,7 +46,7 @@ impl<K: Hash + Eq, V> HashMap<K, V> {
     }
 
     pub fn get(&self, key: &K) -> Option<&V> {
-        let index = find_key_index(&key, self.items.len());
+        let index = find_key_index(&key, self.capacity());
         let containing_list = &self.items[index];
 
         containing_list.iter()
@@ -54,13 +55,13 @@ impl<K: Hash + Eq, V> HashMap<K, V> {
     }
 
     pub fn put(&mut self, key: K, value: V) -> Option<V> {
-        let index = find_key_index(&key, self.items.len());
+        let index = find_key_index(&key, self.capacity());
         let containing_list = &mut self.items[index];
 
         let existing_entry = containing_list.iter_mut()
             .find(|entry| entry.key == key);
 
-        match existing_entry {
+        let existing_value = match existing_entry {
             Some(entry) => Some(mem::replace(&mut entry.value, value)),
             None => {
                 let new_entry = Entry { key: key, value: value };
@@ -68,11 +69,17 @@ impl<K: Hash + Eq, V> HashMap<K, V> {
                 self.size += 1;
                 None
             }
+        };
+
+        if self.exceeds_threshold() {
+            self.resize(self.capacity() * 2);
         }
+
+        existing_value
     }
 
     pub fn pop(&mut self, key: &K) -> Option<V> {
-        let index = find_key_index(&key, self.items.len());
+        let index = find_key_index(&key, self.capacity());
         let containing_list = &mut self.items[index];
 
         containing_list.iter()
@@ -94,6 +101,14 @@ impl<K: Hash + Eq, V> HashMap<K, V> {
 
     pub fn size(&self) -> usize {
         self.size
+    }
+
+    fn capacity(&self) -> usize {
+        self.items.len()
+    }
+
+    fn exceeds_threshold(&self) -> bool {
+        self.size() as f64 >= (self.capacity() as f64) * DEFAULT_LOAD_FACTOR
     }
 }
 
@@ -204,5 +219,25 @@ mod tests {
 
         map.pop(&"key");
         assert_eq!(map.size(), 0);
+    }
+
+    #[test]
+    fn test_dynamic_resizing() {
+        let initial_capacity = 16;
+        let mut map = HashMap::with_capacity(initial_capacity);
+
+        assert_eq!(map.capacity(), initial_capacity);
+
+        let entries: Vec<(String, i32)> = (1..100).map(|i| i.to_string()).zip(1..100).collect();
+
+        for entry in entries.iter() {
+            map.put(&entry.0[..], entry.1);
+        }
+
+        assert!(map.capacity() > initial_capacity);
+
+        for entry in entries.iter() {
+            assert_eq!(map.get(&&entry.0[..]), Some(&entry.1))
+        }
     }
 }
