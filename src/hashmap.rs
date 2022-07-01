@@ -78,7 +78,6 @@ impl<K: Hash + Eq, V> HashMap<K, V> {
             .map(|position| containing_list.swap_remove(position).value)
     }
 
-
     pub fn resize(&mut self, size: usize) {
         let mut new_vec: Vec<Vec<Entry<K, V>>> = HashMap::create_backing_vec(size);
         for entry in mem::take(&mut self.items).into_iter().flatten() {
@@ -86,6 +85,10 @@ impl<K: Hash + Eq, V> HashMap<K, V> {
             new_vec[index].push(entry)
         }
         self.items = new_vec;
+    }
+
+    pub fn size(&self) -> usize {
+        self.items.iter().fold(0, |accum, bucket_list| accum + bucket_list.len())
     }
 }
 
@@ -180,5 +183,21 @@ mod tests {
         for entry in entries.iter() {
             assert_eq!(map.get(&&entry.0[..]), Some(&entry.1))
         }
+    }
+
+    #[test]
+    fn test_size() {
+        let mut map = HashMap::new();
+
+        assert_eq!(map.size(), 0);
+
+        map.put("key", 1);
+        assert_eq!(map.size(), 1);
+
+        map.pop(&"key");
+        assert_eq!(map.size(), 0);
+
+        map.pop(&"key");
+        assert_eq!(map.size(), 0);
     }
 }
