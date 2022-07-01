@@ -13,7 +13,7 @@ pub struct Entry<K, V> {
     pub value: V
 }
 
-const DEFAULT_SIZE: usize = 16;
+const DEFAULT_CAPACITY: usize = 16;
 
 fn hash(value: &impl Hash) -> u64 {
     let mut hasher = DefaultHasher::new();
@@ -28,18 +28,18 @@ fn find_key_index(key: &impl Hash, capacity: usize) -> usize {
 }
 
 impl<K: Hash + Eq, V> HashMap<K, V> {
-    fn create_backing_vec(size: usize) -> Vec<Vec<Entry<K, V>>> {
-        let mut vec = Vec::with_capacity(size);
-        vec.resize_with(size, Vec::new);
+    fn create_backing_vec(capacity: usize) -> Vec<Vec<Entry<K, V>>> {
+        let mut vec = Vec::with_capacity(capacity);
+        vec.resize_with(capacity, Vec::new);
         vec
     }
 
     pub fn new() -> Self {
-        HashMap::with_size(DEFAULT_SIZE)
+        HashMap::with_capacity(DEFAULT_CAPACITY)
     }
 
-    pub fn with_size(size: usize) -> Self {
-        let vec = HashMap::create_backing_vec(size);
+    pub fn with_capacity(capacity: usize) -> Self {
+        let vec = HashMap::create_backing_vec(capacity);
         HashMap { items: vec }
     }
 
@@ -78,8 +78,8 @@ impl<K: Hash + Eq, V> HashMap<K, V> {
             .map(|position| containing_list.swap_remove(position).value)
     }
 
-    pub fn resize(&mut self, size: usize) {
-        let mut new_vec: Vec<Vec<Entry<K, V>>> = HashMap::create_backing_vec(size);
+    pub fn resize(&mut self, capacity: usize) {
+        let mut new_vec: Vec<Vec<Entry<K, V>>> = HashMap::create_backing_vec(capacity);
         for entry in mem::take(&mut self.items).into_iter().flatten() {
             let index = find_key_index(&entry.key, new_vec.len());
             new_vec[index].push(entry)
@@ -163,7 +163,7 @@ mod tests {
 
     #[test]
     fn test_resize() {
-        let mut map = HashMap::with_size(DEFAULT_SIZE);
+        let mut map = HashMap::with_capacity(DEFAULT_CAPACITY);
 
         let entries: Vec<(String, i32)> = (1..100).map(|i| i.to_string()).zip(1..100).collect();
 
