@@ -5,7 +5,8 @@ pub mod iter_mut;
 pub mod into_iter;
 
 pub struct HashMap<K, V> {
-    items: Vec<Vec<Entry<K, V>>>
+    items: Vec<Vec<Entry<K, V>>>,
+    size: usize
 }
 
 pub struct Entry<K, V> {
@@ -40,7 +41,7 @@ impl<K: Hash + Eq, V> HashMap<K, V> {
 
     pub fn with_capacity(capacity: usize) -> Self {
         let vec = HashMap::create_backing_vec(capacity);
-        HashMap { items: vec }
+        HashMap { items: vec, size: 0 }
     }
 
     pub fn get(&self, key: &K) -> Option<&V> {
@@ -64,6 +65,7 @@ impl<K: Hash + Eq, V> HashMap<K, V> {
             None => {
                 let new_entry = Entry { key: key, value: value };
                 containing_list.push(new_entry);
+                self.size += 1;
                 None
             }
         }
@@ -75,7 +77,10 @@ impl<K: Hash + Eq, V> HashMap<K, V> {
 
         containing_list.iter()
             .position(|entry| &entry.key == key)
-            .map(|position| containing_list.swap_remove(position).value)
+            .map(|position| {
+                self.size -= 1;
+                containing_list.swap_remove(position).value
+            })
     }
 
     pub fn resize(&mut self, capacity: usize) {
@@ -88,7 +93,7 @@ impl<K: Hash + Eq, V> HashMap<K, V> {
     }
 
     pub fn size(&self) -> usize {
-        self.items.iter().fold(0, |accum, bucket_list| accum + bucket_list.len())
+        self.size
     }
 }
 
