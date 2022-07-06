@@ -1,10 +1,13 @@
 use super::{HashMap, Entry};
 
+/// An [Iterator] for a [HashMap] which returns references to its entries.
+/// The keys are immutable and the values are mutable.
 pub struct IterMut<'a, 'b, K, V> {
     iterator: Box<dyn Iterator<Item = Entry<&'a K, &'a mut V>> + 'b>
 }
 
 impl<K, V> HashMap<K, V> {
+    /// Get an [IterMut] for this [HashMap].
     pub fn iter_mut(&mut self) -> IterMut<K, V> {
         IterMut {
             iterator: Box::new(self.items.iter_mut().flatten()

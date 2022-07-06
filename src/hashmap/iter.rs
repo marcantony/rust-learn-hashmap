@@ -1,10 +1,12 @@
 use super::{HashMap, Entry};
 
+/// An [Iterator] for a [HashMap] which returns shared references to its entries.
 pub struct Iter<'a, 'b, K: 'a, V: 'a> {
     iterator: Box<dyn Iterator<Item = Entry<&'a K, &'a V>> + 'b>
 }
 
 impl<K, V> HashMap<K, V> {
+    /// Get an [Iter] for this [HashMap].
     pub fn iter(& self) -> Iter<K, V> {
         Iter {
             iterator: Box::new(self.items.iter().flatten()

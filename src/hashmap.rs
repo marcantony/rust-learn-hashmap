@@ -1,3 +1,8 @@
+//! A hash map implementation that uses separate chaining for collision resolution.
+//! Because it uses separate chaining, its capacity has no bearing on the maximum number
+//! of entries it can hold. However, allowing the load factor to become too high
+//! will decrease the average performance of the map.
+
 use std::{hash::{Hash, Hasher}, collections::hash_map::DefaultHasher, mem};
 
 use self::options::{Options, ValidatedOptions};
@@ -7,12 +12,14 @@ pub mod iter_mut;
 pub mod into_iter;
 pub mod options;
 
+/// A hash map object.
 pub struct HashMap<K, V> {
     items: Vec<Vec<Entry<K, V>>>,
     size: usize,
     options: ValidatedOptions
 }
 
+/// A `(key, value)` pair in the map.
 pub struct Entry<K, V> {
     pub key: K,
     pub value: V
@@ -37,10 +44,14 @@ impl<K: Hash + Eq, V> HashMap<K, V> {
         vec
     }
 
+    /// Creates a new [HashMap] with the default options.
+    /// See [options] for more details.
     pub fn new() -> Self {
         HashMap::with_options(Options::default().validate().unwrap())
     }
 
+    /// Creates a new [HashMap] with the given options.
+    /// See [options] for more details.
     pub fn with_options(options: ValidatedOptions) -> Self {
         let capacity = options.initial_capacity();
         let vec = HashMap::create_backing_vec(capacity);
@@ -51,6 +62,7 @@ impl<K: Hash + Eq, V> HashMap<K, V> {
         }
     }
 
+    /// Gets a reference to the value corresponding to a key, if it exists.
     pub fn get(&self, key: &K) -> Option<&V> {
         let index = find_key_index(&key, self.capacity());
         let containing_list = &self.items[index];
@@ -60,6 +72,8 @@ impl<K: Hash + Eq, V> HashMap<K, V> {
             .map(|entry| &entry.value)
     }
 
+    /// Puts a `(key, value)` pair in the map. This will overwrite any existing value for the given
+    /// key. Returns the existing value if it exists.
     pub fn put(&mut self, key: K, value: V) -> Option<V> {
         let index = find_key_index(&key, self.capacity());
         let containing_list = &mut self.items[index];
@@ -84,6 +98,7 @@ impl<K: Hash + Eq, V> HashMap<K, V> {
         existing_value
     }
 
+    /// Returns the value corresponding to a key, if it exists.
     pub fn pop(&mut self, key: &K) -> Option<V> {
         let index = find_key_index(&key, self.capacity());
         let containing_list = &mut self.items[index];
@@ -96,6 +111,9 @@ impl<K: Hash + Eq, V> HashMap<K, V> {
             })
     }
 
+    /// Resize the hash map to have the number of buckets specified by `capacity`. This is an expensive
+    /// operation because it has to rehash every entry in the map. If the map has dynamic resizing
+    /// enabled, it will automatically resize to maintain the configured load factor.
     pub fn resize(&mut self, capacity: usize) {
         let mut new_vec: Vec<Vec<Entry<K, V>>> = HashMap::create_backing_vec(capacity);
         for entry in mem::take(&mut self.items).into_iter().flatten() {
@@ -105,6 +123,7 @@ impl<K: Hash + Eq, V> HashMap<K, V> {
         self.items = new_vec;
     }
 
+    /// Returns the current number of entries in the hash map.
     pub fn size(&self) -> usize {
         self.size
     }

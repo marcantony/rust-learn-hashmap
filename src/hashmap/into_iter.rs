@@ -1,10 +1,12 @@
 use super::{HashMap, Entry};
 
+/// An [Iterator] for a [HashMap] which returns its entries with ownership.
 pub struct IntoIter<'a, K, V> {
     iterator: Box<dyn Iterator<Item = Entry<K, V>> + 'a>
 }
 
 impl<'a, K: 'a, V: 'a> HashMap<K, V> {
+    /// Consume this [HashMap] to produce an iterator.
     pub fn into_iter(self) -> IntoIter<'a, K, V> {
         IntoIter {
             iterator: Box::new(self.items.into_iter().flatten())

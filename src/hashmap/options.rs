@@ -1,7 +1,12 @@
+//! HashMap configuration options and validation.
+
 const DEFAULT_CAPACITY: usize = 16;
 const DEFAULT_LOAD_FACTOR: f64 = 0.75;
 const DEFAULT_DYNAMIC_RESIZING: bool = true;
 
+/// An unvalidated set of hash map options. Create an [Options]
+/// and call `validate` to produce a [ValidatedOptions] which can then be used
+/// to create a hash map. Properties left as [None] will be set to sensible defaults.
 #[derive(Default)]
 pub struct Options {
     pub initial_capacity: Option<usize>,
@@ -16,6 +21,7 @@ pub struct ValidatedOptions {
 }
 
 impl Options {
+    /// Validates an [Options] to produce a [ValidatedOptions] or a list of errors.
     pub fn validate(self) -> Result<ValidatedOptions, Vec<&'static str>> {
         let mut errors = Vec::new();
 
