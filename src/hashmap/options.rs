@@ -1,8 +1,8 @@
 //! HashMap configuration options and validation.
 
-const DEFAULT_CAPACITY: usize = 16;
-const DEFAULT_LOAD_FACTOR: f64 = 0.75;
-const DEFAULT_DYNAMIC_RESIZING: bool = true;
+pub const DEFAULT_CAPACITY: usize = 16;
+pub const DEFAULT_LOAD_FACTOR: f64 = 0.75;
+pub const DEFAULT_DYNAMIC_RESIZING: bool = true;
 
 /// An unvalidated set of hash map options. Create an [Options]
 /// and call `validate` to produce a [ValidatedOptions] which can then be used
