@@ -1,31 +1,22 @@
 use std::{hash::{Hash, Hasher}, collections::hash_map::DefaultHasher, mem};
 
+use self::options::{Options, ValidatedOptions};
+
 pub mod iter;
 pub mod iter_mut;
 pub mod into_iter;
+pub mod options;
 
 pub struct HashMap<K, V> {
     items: Vec<Vec<Entry<K, V>>>,
     size: usize,
-    load_factor: f64,
-    dynamic_resizing: bool
+    options: ValidatedOptions
 }
 
 pub struct Entry<K, V> {
     pub key: K,
     pub value: V
 }
-
-#[derive(Default)]
-pub struct HashMapOptions {
-    pub initial_capacity: Option<usize>,
-    pub load_factor: Option<f64>,
-    pub dynamic_resizing: Option<bool>
-}
-
-const DEFAULT_CAPACITY: usize = 16;
-const DEFAULT_LOAD_FACTOR: f64 = 0.75;
-const DEFAULT_DYNAMIC_RESIZING: bool = true;
 
 fn hash(value: &impl Hash) -> u64 {
     let mut hasher = DefaultHasher::new();
@@ -47,23 +38,16 @@ impl<K: Hash + Eq, V> HashMap<K, V> {
     }
 
     pub fn new() -> Self {
-        HashMap::with_options(
-            HashMapOptions {
-                initial_capacity: Some(DEFAULT_CAPACITY),
-                load_factor: Some(DEFAULT_LOAD_FACTOR),
-                dynamic_resizing: Some(DEFAULT_DYNAMIC_RESIZING)
-            }
-        )
+        HashMap::with_options(Options::default().validate().unwrap())
     }
 
-    pub fn with_options(options: HashMapOptions) -> Self {
-        let capacity = options.initial_capacity.unwrap_or(DEFAULT_CAPACITY);
+    pub fn with_options(options: ValidatedOptions) -> Self {
+        let capacity = options.initial_capacity();
         let vec = HashMap::create_backing_vec(capacity);
         HashMap {
             items: vec,
             size: 0,
-            load_factor: options.load_factor.unwrap_or(DEFAULT_LOAD_FACTOR),
-            dynamic_resizing: options.dynamic_resizing.unwrap_or(DEFAULT_DYNAMIC_RESIZING)
+            options
         }
     }
 
@@ -93,7 +77,7 @@ impl<K: Hash + Eq, V> HashMap<K, V> {
             }
         };
 
-        if self.dynamic_resizing && self.exceeds_threshold() {
+        if self.options.dynamic_resizing() && self.exceeds_threshold() {
             self.resize(self.capacity() * 2);
         }
 
@@ -130,7 +114,7 @@ impl<K: Hash + Eq, V> HashMap<K, V> {
     }
 
     fn exceeds_threshold(&self) -> bool {
-        self.size() as f64 >= (self.capacity() as f64) * self.load_factor
+        self.size() as f64 >= (self.capacity() as f64) * self.options.load_factor()
     }
 }
 
@@ -206,11 +190,11 @@ mod tests {
     #[test]
     fn test_resize() {
         let mut map = HashMap::with_options(
-            HashMapOptions {
+            Options {
                 initial_capacity: Some(16),
                 dynamic_resizing: Some(false),
                 ..Default::default()
-            }
+            }.validate().unwrap()
         );
 
         let entries: Vec<(String, i32)> = (1..100).map(|i| i.to_string()).zip(1..100).collect();
@@ -253,11 +237,11 @@ mod tests {
     fn test_dynamic_resizing() {
         let initial_capacity = 16;
         let mut map = HashMap::with_options(
-            HashMapOptions{
+            Options{
                 initial_capacity: Some(initial_capacity),
                 dynamic_resizing: Some(true),
                 ..Default::default()
-            }
+            }.validate().unwrap()
         );
 
         assert_eq!(map.capacity(), initial_capacity);
@@ -279,7 +263,7 @@ mod tests {
     fn test_capacity_option() {
         let initial_capacity = 2;
         let map: HashMap<i32, i32> = HashMap::with_options(
-            HashMapOptions { initial_capacity: Some(initial_capacity), ..Default::default() });
+            Options { initial_capacity: Some(initial_capacity), ..Default::default() }.validate().unwrap());
 
         assert_eq!(map.capacity(), initial_capacity)
     }
@@ -288,11 +272,11 @@ mod tests {
     fn test_dynamic_resizing_off() {
         let initial_capacity = 3;
         let mut map: HashMap<i32, i32> = HashMap::with_options(
-            HashMapOptions {
+            Options {
                 initial_capacity: Some(initial_capacity),
                 load_factor: Some(0.5),
                 dynamic_resizing: Some(false)
-             }
+             }.validate().unwrap()
         );
 
         map.put(1, 1);
@@ -306,11 +290,11 @@ mod tests {
     fn test_load_factor_option() {
         let initial_capacity = 4;
         let mut map: HashMap<i32, i32> = HashMap::with_options(
-            HashMapOptions {
+            Options {
                 initial_capacity: Some(initial_capacity),
                 load_factor: Some(0.5),
                 dynamic_resizing: Some(true)
-             }
+             }.validate().unwrap()
         );
 
         map.put(1, 1);
@@ -318,11 +302,11 @@ mod tests {
         assert_ne!(map.capacity(), initial_capacity);
 
         let mut map: HashMap<i32, i32> = HashMap::with_options(
-            HashMapOptions {
+            Options {
                 initial_capacity: Some(initial_capacity),
                 load_factor: Some(0.75),
                 dynamic_resizing: Some(true)
-             }
+             }.validate().unwrap()
         );
 
         map.put(1, 1);
